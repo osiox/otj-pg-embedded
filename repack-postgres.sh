@@ -1,8 +1,12 @@
 #!/bin/bash -ex
 # NB: This is the *server* version, which is not to be confused with the client library version.
 # The important compatibility point is the *protocol* version, which hasn't changed in ages.
-VERSION=9.6.6-3
-POSTGIS_VERSION=pg96-2.4.2x64
+#VERSION=9.6.6-3
+VERSION=9.5.10-2
+
+POSTGIS_VERSION_LINUX=9.5-postgis-scripts_2.2.1
+#POSTGIS_VERSION_WIN=pg96-2.4.2x64
+POSTGIS_VERSION_WIN=pg95-2.3.5x64
 
 RSRC_DIR=$PWD/target/generated-resources
 
@@ -11,20 +15,26 @@ RSRC_DIR=$PWD/target/generated-resources
 cd `dirname $0`
 
 PACKDIR=$(mktemp -d -t wat.XXXXXX)
+POSTGISDIR=/postgis
 LINUX_DIST=dist/postgresql-$VERSION-linux-x64-binaries.tar.gz
 OSX_DIST=dist/postgresql-$VERSION-osx-binaries.zip
 WINDOWS_DIST=dist/postgresql-$VERSION-win-binaries.zip
 
-WINDOWS_POSTGIS_DIST=dist/postgis-bundle-$POSTGIS_VERSION.zip
+LINUX_POSTGIS_DIST=dist/postgis-bundle-$POSTGIS_VERSION_LINUX
+WINDOWS_POSTGIS_DIST=dist/postgis-bundle-$POSTGIS_VERSION_WIN.zip
 
 mkdir -p dist/ target/generated-resources/
 [ -e $LINUX_DIST ] || wget -O $LINUX_DIST "http://get.enterprisedb.com/postgresql/postgresql-$VERSION-linux-x64-binaries.tar.gz"
 [ -e $OSX_DIST ] || wget -O $OSX_DIST "http://get.enterprisedb.com/postgresql/postgresql-$VERSION-osx-binaries.zip"
 [ -e $WINDOWS_DIST ] || wget -O $WINDOWS_DIST "http://get.enterprisedb.com/postgresql/postgresql-$VERSION-windows-x64-binaries.zip"
 
-[ -e $WINDOWS_POSTGIS_DIST ] || wget -O $WINDOWS_POSTGIS_DIST "https://winnie.postgis.net/download/windows/pg96/buildbot/postgis-bundle-$POSTGIS_VERSION.zip"
+[ -e $LINUX_POSTGIS_DIST ] || wget -O $LINUX_POSTGIS_DIST "mirrors.kernel.org/ubuntu/pool/universe/p/postgis/postgresql-$POSTGIS_VERSION_LINUX+dfsg-2_all.deb"
+[ -e $WINDOWS_POSTGIS_DIST ] || wget -O $WINDOWS_POSTGIS_DIST "https://winnie.postgis.net/download/windows/pg96/buildbot/postgis-bundle-$POSTGIS_VERSION_WIN.zip"
 
+mkdir $POSTGISDIR
+dpkg-deb -x $LINUX_POSTGIS_DIST $POSTGISDIR
 tar xzf $LINUX_DIST -C $PACKDIR
+cp -r $POSTGISDIR/usr/share/postgresql/9.5/* $PACKDIR/pgsql/share/postgresql
 pushd $PACKDIR/pgsql
 tar cJf $RSRC_DIR/postgresql-Linux-x86_64.txz \
   share/postgresql \
@@ -34,7 +44,7 @@ tar cJf $RSRC_DIR/postgresql-Linux-x86_64.txz \
   bin/postgres
 popd
 
-rm -fr $PACKDIR && mkdir -p $PACKDIR
+rm -fr $PACKDIR && mkdir -p $PACKDIR && rm -r $POSTGISDIR
 
 unzip -q -d $PACKDIR $OSX_DIST
 pushd $PACKDIR/pgsql
@@ -52,7 +62,7 @@ rm -fr $PACKDIR && mkdir -p $PACKDIR
 # Windows distribution with postgis extension
 unzip -q -d $PACKDIR $WINDOWS_DIST
 unzip -q -d $PACKDIR $WINDOWS_POSTGIS_DIST
-cp -r $PACKDIR/postgis-bundle-$POSTGIS_VERSION/* $PACKDIR/pgsql
+cp -r $PACKDIR/postgis-bundle-$POSTGIS_VERSION_WIN/* $PACKDIR/pgsql
 pushd $PACKDIR/pgsql
 tar cJf $RSRC_DIR/postgresql-Windows-x86_64.txz \
   share \
