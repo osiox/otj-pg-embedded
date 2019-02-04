@@ -4,7 +4,7 @@
 VERSION=9.6.6-3
 #VERSION=9.5.10-2
 
-POSTGIS_VERSION_WIN=pg96-2.4.2x64
+POSTGIS_VERSION_WIN=pg96-2.5.1x64
 #POSTGIS_VERSION_WIN=pg95-2.3.5x64
 
 apt-get update && apt-get install -y postgresql-9.6-postgis-2.3
